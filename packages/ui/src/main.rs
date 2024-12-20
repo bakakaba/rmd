@@ -1,5 +1,7 @@
 use iced::widget::{button, center, column, text};
-use iced::{system, Element, Task};
+use iced::{system as iced_system, Element, Task};
+
+use system::SysInfo;
 
 pub fn main() -> iced::Result {
     iced::application("System Information - Iced", Example::update, Example::view)
@@ -12,14 +14,14 @@ enum Example {
     #[default]
     Loading,
     Loaded {
-        information: system::Information,
+        information: iced_system::Information,
     },
 }
 
 #[derive(Clone, Debug)]
 #[allow(clippy::large_enum_variant)]
 enum Message {
-    InformationReceived(system::Information),
+    InformationReceived(iced_system::Information),
     Refresh,
 }
 
@@ -27,7 +29,7 @@ impl Example {
     fn new() -> (Self, Task<Message>) {
         (
             Self::Loading,
-            system::fetch_information().map(Message::InformationReceived),
+            iced_system::fetch_information().map(Message::InformationReceived),
         )
     }
 
@@ -54,37 +56,12 @@ impl Example {
         let content: Element<_> = match self {
             Example::Loading => text("Loading...").size(40).into(),
             Example::Loaded { information } => {
-                let system_name = text!(
-                    "System name: {}",
-                    information
-                        .system_name
-                        .as_ref()
-                        .unwrap_or(&"unknown".to_string())
-                );
+                let sys_info = SysInfo::new();
+                let system_name = text!("System name: {}", sys_info.system_name);
+                let system_version = text!("System version: {}", sys_info.system_version);
+                let system_kernel = text!("System kernel: {}", sys_info.kernel);
 
-                let system_kernel = text!(
-                    "System kernel: {}",
-                    information
-                        .system_kernel
-                        .as_ref()
-                        .unwrap_or(&"unknown".to_string())
-                );
-
-                let system_version = text!(
-                    "System version: {}",
-                    information
-                        .system_version
-                        .as_ref()
-                        .unwrap_or(&"unknown".to_string())
-                );
-
-                let system_short_version = text!(
-                    "System short version: {}",
-                    information
-                        .system_short_version
-                        .as_ref()
-                        .unwrap_or(&"unknown".to_string())
-                );
+                let hostname = text!("Hostname: {}", sys_info.hostname);
 
                 let cpu_brand = text!("Processor brand: {}", information.cpu_brand);
 
@@ -120,7 +97,7 @@ impl Example {
                     system_name.size(30),
                     system_kernel.size(30),
                     system_version.size(30),
-                    system_short_version.size(30),
+                    hostname.size(30),
                     cpu_brand.size(30),
                     cpu_cores.size(30),
                     memory_total.size(30),
@@ -129,7 +106,7 @@ impl Example {
                     graphics_backend.size(30),
                     button("Refresh").on_press(Message::Refresh)
                 ]
-                .spacing(10)
+                .spacing(2)
                 .into()
             }
         };
